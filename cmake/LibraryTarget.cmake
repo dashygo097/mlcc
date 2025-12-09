@@ -15,3 +15,16 @@ target_include_directories(mlcc PUBLIC
   
 # Export compile features
 target_compile_features(mlcc PUBLIC cxx_std_17)
+
+target_link_libraries(mlcc PUBLIC
+  MLIRParser
+  MLIRIR
+  MLIRSupport
+  MLIRDialect
+  
+  MLIRFuncDialect
+  MLIRArithDialect
+  
+  LLVMSupport
+  LLVMCore
+)

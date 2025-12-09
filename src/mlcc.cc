@@ -1,3 +1,3 @@
 #include <mlcc.hh>
 
-namespace mlc {} // namespace mlc
+namespace mlcc {} // namespace mlcc
