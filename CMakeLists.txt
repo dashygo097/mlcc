@@ -22,9 +22,9 @@ include(SourceCollections)
 include(LibraryTarget)
 include(BuildSummaries)
 
-# Tools
-if(ENABLE_TOOLS_BUILDING)
-  add_subdirectory(tools)
+# Executables
+if(BUILD_EXECUTABLES)
+  add_subdirectory(src)
 endif()
 
 # Tests
