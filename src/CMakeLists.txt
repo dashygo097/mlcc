@@ -9,65 +9,7 @@ if(NOT COMMAND mlir_tablegen)
   include(TableGen)
 endif()
 
-# Generate TableGen files for HPC dialect
-set(HPC_TABLEGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/hpc)
-file(MAKE_DIRECTORY ${HPC_TABLEGEN_OUTPUT_DIR})
-
-# Add to include path
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-message(STATUS "[src] TableGen output directory: ${HPC_TABLEGEN_OUTPUT_DIR}")
-
-# Generate dialect files from Ops.td
-set(LLVM_TARGET_DEFINITIONS ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Ops.td)
-
-mlir_tablegen(Dialect.h.inc -gen-dialect-decls -dialect=hpc)
-mlir_tablegen(Dialect.cpp.inc -gen-dialect-defs -dialect=hpc)
-mlir_tablegen(Ops.h.inc -gen-op-decls)
-mlir_tablegen(Ops.cpp.inc -gen-op-defs)
-
-add_public_tablegen_target(HPCOpsIncGen)
-
-# Copy generated files to the expected location
-add_custom_command(TARGET HPCOpsIncGen POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Dialect.h.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Dialect.h.inc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Dialect.cpp.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Dialect.cpp.inc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Ops.h.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Ops.h.inc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Ops.cpp.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Ops.cpp.inc
-  COMMENT "Copying HPC dialect generated files"
-)
-
-# Generate pass files from Passes.td
-set(LLVM_TARGET_DEFINITIONS ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Passes.td)
-
-mlir_tablegen(Passes.h.inc -gen-pass-decls -name HPC)
-mlir_tablegen(Passes.capi.h.inc -gen-pass-capi-header --prefix HPC)
-mlir_tablegen(Passes.capi.cpp.inc -gen-pass-capi-impl --prefix HPC)
-
-add_public_tablegen_target(HPCPassesIncGen)
-
-# Copy generated pass files
-add_custom_command(TARGET HPCPassesIncGen POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Passes.h.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Passes.h.inc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Passes.capi.h.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Passes.capi.h.inc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/Passes.capi.cpp.inc
-    ${HPC_TABLEGEN_OUTPUT_DIR}/Passes.capi.cpp.inc
-  COMMENT "Copying HPC pass generated files"
-)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddDialect.cmake)
 
 # Collect HPC dialect sources
 set(HPC_DIALECT_SOURCES
@@ -76,71 +18,26 @@ set(HPC_DIALECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Transforms/Lower2LLVM.cpp
 )
 
+add_mlcc_dialect(
+  NAME HPC
+  TD_FILE ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Ops.td
+  PASS_TD_FILE ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Passes.td
+  SOURCES ${HPC_DIALECT_SOURCES}
+)
+
 set(HPC_RUNTIME_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Runtime/Runtime.cpp
 )
 
-# Verify sources exist
-foreach(src ${HPC_DIALECT_SOURCES} ${HPC_RUNTIME_SOURCES})
-  if(NOT EXISTS ${src})
-    message(FATAL_ERROR "Source file not found: ${src}")
-  endif()
-endforeach()
+add_mlcc_runtime(
+  NAME HPC
+  SOURCES ${HPC_RUNTIME_SOURCES}
+  LINK_LIBS ${HPC_LIBRARY}
+  INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/3rdparty/hpc/include
+)
 
 message(STATUS "[src] HPC dialect sources: ${HPC_DIALECT_SOURCES}")
 message(STATUS "[src] HPC runtime sources: ${HPC_RUNTIME_SOURCES}")
-
-# Build HPC dialect library
-add_library(mlcc_hpc_dialect STATIC ${HPC_DIALECT_SOURCES})
-
-# Add dependencies on TableGen targets
-add_dependencies(mlcc_hpc_dialect HPCOpsIncGen HPCPassesIncGen)
-
-target_include_directories(mlcc_hpc_dialect PUBLIC
-  ${MLCC_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}/include
-)
-
-target_link_libraries(mlcc_hpc_dialect PUBLIC
-  ${MLCC_LIBRARY}
-  MLIRParser
-  MLIRIR
-  MLIRSupport
-  MLIRDialect
-  MLIRPass
-  MLIRTransforms
-  MLIRFuncDialect
-  MLIRArithDialect
-  MLIRLLVMDialect
-  MLIRLLVMCommonConversion
-  MLIRMemRefDialect
-  LLVMSupport
-  LLVMCore
-)
-
-set_target_properties(mlcc_hpc_dialect PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
-
-message(STATUS "[src] Created library: libmlcc_hpc_dialect.a")
-
-# Build HPC runtime library
-add_library(mlcc_hpc_runtime STATIC ${HPC_RUNTIME_SOURCES})
-
-target_link_libraries(mlcc_hpc_runtime PUBLIC ${HPC_LIBRARY})
-
-target_include_directories(mlcc_hpc_runtime PUBLIC
-  ${MLCC_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/3rdparty/hpc/include
-)
-
-set_target_properties(mlcc_hpc_runtime PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
-
-message(STATUS "[src] Created library: libmlcc_hpc_runtime.a")
 
 # Build mlcc-opt executable
 add_llvm_executable(mlcc-opt mlcc-opt.cpp)
