@@ -13,11 +13,17 @@ print_info("[INFO] Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSI
 print_info("[INFO] Features:\n" "95")
 
 if(CCACHE_PROGRAM)
-  print_info("  ✓ ccache: ${CCACHE_PROGRAM}\n" "92")
+  print_info("  ✓ ccache ${CCACHE_PROGRAM}\n" "92")
+endif()
+
+if(HAS_HPC)
+  print_info("  ✓ hpc: 3rdparty/hpc\n" "92")
+else()
+  print_info("  ✗ hpc support\n" "91")
 endif()
 
 if(HAS_LLVM)
-print_info("  ✓ llvm: ${LLVM_DIR}\n" "92")
+  print_info("  ✓ llvm: ${LLVM_DIR}\n" "92")
 else()
   print_info("  ✗ llvm support\n" "91")
 endif()
@@ -28,16 +34,27 @@ else()
   print_info("  ✗ mlir support\n" "91")
 endif()
 
+if(ENABLE_TOOLS_BUILDING)
+  print_info("  ✓ tools building\n" "92")
+endif()
+
+if(ENABLE_TESTING)
+  print_info("  ✓ testing enabled\n" "92")
+endif()
+
 # Source files
 print_info("\n" "0")
-make_paths_relative(REL_SOURCES MLCC_SOURCES)
-make_paths_relative(REL_HEADERS MLCC_HEADERS)
+if(DEFINED MLCC_SOURCES)
+  make_paths_relative(REL_SOURCES MLCC_SOURCES)
+  make_preview_string(REL_SOURCES 3)
+  print_info("[TRACE] Sources: ${PREVIOUS_SCOPE_VAR}\n" "96")
+endif()
 
-make_preview_string(REL_HEADERS 3)
-print_info("[TRACE] Headers: ${PREVIOUS_SCOPE_VAR}\n" "94")
-
-make_preview_string(REL_SOURCES 3)
-print_info("[TRACE] Sources: ${PREVIOUS_SCOPE_VAR}\n" "96")
+if(DEFINED MLCC_HEADERS)
+  make_paths_relative(REL_HEADERS MLCC_HEADERS)
+  make_preview_string(REL_HEADERS 3)
+  print_info("[TRACE] Headers: ${PREVIOUS_SCOPE_VAR}\n" "94")
+endif()
 
 print_info("◆ END OF SUMMARIES " "90")
 print_info("===================================\n" "90")

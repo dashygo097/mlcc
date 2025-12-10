@@ -13,7 +13,7 @@ if(EXISTS "${CMAKE_BINARY_DIR}/config.cmake")
   include("${CMAKE_BINARY_DIR}/config.cmake")
 endif()
 
-# Include modular cmake components
+# Build Project
 include(Platforms)
 include(CompilerSetup)
 include(Helpers)
@@ -22,7 +22,7 @@ include(SourceCollections)
 include(LibraryTarget)
 include(BuildSummaries)
 
-# Tools (compiler executables)
+# Tools
 if(ENABLE_TOOLS_BUILDING)
   add_subdirectory(tools)
 endif()
