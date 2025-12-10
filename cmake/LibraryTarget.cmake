@@ -17,6 +17,7 @@ target_include_directories(mlcc PUBLIC
 target_compile_features(mlcc PUBLIC cxx_std_17)
 
 target_link_libraries(mlcc PUBLIC
+  hpc
   MLIRParser
   MLIRIR
   MLIRSupport
