@@ -1,8 +1,6 @@
 #include "../Dialect.hpp"
 #include "../Passes.hpp"
 
-#include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
-#include "mlir/Conversion/LLVMCommon/Pattern.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -13,10 +11,6 @@
 using namespace mlir;
 
 namespace {
-
-//===----------------------------------------------------------------------===//
-// Helper functions
-//===----------------------------------------------------------------------===//
 
 LLVM::LLVMFuncOp getOrInsertFunction(PatternRewriter &rewriter, ModuleOp module,
                                      StringRef name,
@@ -30,14 +24,9 @@ LLVM::LLVMFuncOp getOrInsertFunction(PatternRewriter &rewriter, ModuleOp module,
 }
 
 Value extractMemRefPtr(Location loc, Value memref, PatternRewriter &rewriter) {
-  // Extract aligned pointer from memref descriptor (index 1)
   return rewriter.create<LLVM::ExtractValueOp>(loc, memref,
                                                ArrayRef<int64_t>{1});
 }
-
-//===----------------------------------------------------------------------===//
-// Conversion patterns
-//===----------------------------------------------------------------------===//
 
 struct AxpyOpLowering : public OpConversionPattern<hpc::AxpyOp> {
   using OpConversionPattern<hpc::AxpyOp>::OpConversionPattern;
@@ -51,7 +40,8 @@ struct AxpyOpLowering : public OpConversionPattern<hpc::AxpyOp> {
     auto srcType = op.getSrc().getType().cast<MemRefType>();
     Type elemType = srcType.getElementType();
 
-    std::string funcName = elemType.isF32() ? "hpc_axpy_f32" : "hpc_axpy_f64";
+    std::string funcName =
+        elemType.isF32() ? "hpc_axpy_seq_f32" : "hpc_axpy_seq_f64";
 
     auto i64Type = rewriter.getI64Type();
     auto ptrType = LLVM::LLVMPointerType::get(rewriter.getContext());
@@ -70,7 +60,6 @@ struct AxpyOpLowering : public OpConversionPattern<hpc::AxpyOp> {
 
     Value n = rewriter.create<LLVM::ConstantOp>(loc, i64Type, op.getNAttr());
 
-    // Create call using function name (string)
     rewriter.create<LLVM::CallOp>(
         loc, TypeRange{}, // void return
         funcName, ValueRange{n, dstPtr, srcPtr, adaptor.getAlpha()});
@@ -92,7 +81,8 @@ struct CopyOpLowering : public OpConversionPattern<hpc::CopyOp> {
     auto srcType = op.getSrc().getType().cast<MemRefType>();
     Type elemType = srcType.getElementType();
 
-    std::string funcName = elemType.isF32() ? "hpc_copy_f32" : "hpc_copy_f64";
+    std::string funcName =
+        elemType.isF32() ? "hpc_copy_seq_f32" : "hpc_copy_seq_f64";
 
     auto i64Type = rewriter.getI64Type();
     auto ptrType = LLVM::LLVMPointerType::get(rewriter.getContext());
@@ -131,7 +121,8 @@ struct ScalOpLowering : public OpConversionPattern<hpc::ScalOp> {
     auto dstType = op.getDst().getType().cast<MemRefType>();
     Type elemType = dstType.getElementType();
 
-    std::string funcName = elemType.isF32() ? "hpc_scal_f32" : "hpc_scal_f64";
+    std::string funcName =
+        elemType.isF32() ? "hpc_scal_seq_f32" : "hpc_scal_seq_f64";
 
     auto i64Type = rewriter.getI64Type();
     auto ptrType = LLVM::LLVMPointerType::get(rewriter.getContext());
@@ -171,7 +162,8 @@ struct DotOpLowering : public OpConversionPattern<hpc::DotOp> {
     Type elemType = src1Type.getElementType();
     Type resultType = op.getResult().getType();
 
-    std::string funcName = elemType.isF32() ? "hpc_dot_f32" : "hpc_dot_f64";
+    std::string funcName =
+        elemType.isF32() ? "hpc_dot_seq_f32" : "hpc_dot_seq_f64";
 
     auto i64Type = rewriter.getI64Type();
     auto ptrType = LLVM::LLVMPointerType::get(rewriter.getContext());
@@ -199,10 +191,6 @@ struct DotOpLowering : public OpConversionPattern<hpc::DotOp> {
   }
 };
 
-//===----------------------------------------------------------------------===//
-// Pass definition
-//===----------------------------------------------------------------------===//
-
 struct LowerHPCToLLVMPass
     : public PassWrapper<LowerHPCToLLVMPass, OperationPass<ModuleOp>> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(LowerHPCToLLVMPass)
@@ -227,15 +215,11 @@ struct LowerHPCToLLVMPass
 
   StringRef getArgument() const override { return "lower-hpc-to-llvm"; }
   StringRef getDescription() const override {
-    return "Lower HPC dialect to LLVM calls to libhpc. a";
+    return "Lower HPC dialect to LLVM calls to libhpc.a";
   }
 };
 
-} // anonymous namespace
-
-//===----------------------------------------------------------------------===//
-// Pass creation and registration (OUTSIDE anonymous namespace)
-//===----------------------------------------------------------------------===//
+} // namespace
 
 namespace mlir {
 namespace hpc {
@@ -245,7 +229,6 @@ std::unique_ptr<OperationPass<ModuleOp>> createLowerHPCToLLVMPass() {
 }
 
 void registerPasses() {
-  // Registration implementation
   ::mlir::registerPass([]() -> std::unique_ptr<::mlir::Pass> {
     return createLowerHPCToLLVMPass();
   });
@@ -254,6 +237,5 @@ void registerPasses() {
 } // namespace hpc
 } // namespace mlir
 
-// Include generated pass registration OUTSIDE all namespaces
 #define GEN_PASS_REGISTRATION
 #include "hpc/Passes.h.inc"

@@ -6,20 +6,17 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 
 def HPC_Dialect : Dialect {
   let name = "hpc";
-  let summary = "HPC BLAS dialect";
+  let summary = "HPC dialect";
   let description = [{
-    High-performance BLAS operations that lower to libhpc.a calls.
+    High-performance operations that lower to libhpc.a calls.
   }];
-  let cppNamespace = ":: mlir::hpc";
+  let cppNamespace = "::mlir::hpc";
 }
 
 class HPC_Op<string mnemonic, list<Trait> traits = []> : 
     Op<HPC_Dialect, mnemonic, traits>;
 
-//===----------------------------------------------------------------------===//
-// AXPY Operation
-//===----------------------------------------------------------------------===//
-
+// AXPY
 def HPC_AxpyOp : HPC_Op<"axpy", [MemoryEffects<[MemWrite]>]> {
   let summary = "Y = alpha * X + Y";
   let description = [{
@@ -41,10 +38,7 @@ def HPC_AxpyOp : HPC_Op<"axpy", [MemoryEffects<[MemWrite]>]> {
   let hasVerifier = 1;
 }
 
-//===----------------------------------------------------------------------===//
-// COPY Operation
-//===----------------------------------------------------------------------===//
-
+// COPY
 def HPC_CopyOp : HPC_Op<"copy", [MemoryEffects<[MemWrite]>]> {
   let summary = "Y = X";
   let description = [{
@@ -64,10 +58,7 @@ def HPC_CopyOp : HPC_Op<"copy", [MemoryEffects<[MemWrite]>]> {
   let hasVerifier = 1;
 }
 
-//===----------------------------------------------------------------------===//
-// SCAL Operation
-//===----------------------------------------------------------------------===//
-
+// SCAL
 def HPC_ScalOp :  HPC_Op<"scal", [MemoryEffects<[MemWrite]>]> {
   let summary = "X = alpha * X";
   let description = [{
@@ -87,9 +78,7 @@ def HPC_ScalOp :  HPC_Op<"scal", [MemoryEffects<[MemWrite]>]> {
   let hasVerifier = 1;
 }
 
-//===----------------------------------------------------------------------===//
-// DOT Operation
-//===----------------------------------------------------------------------===//
+// DOT
 
 def HPC_DotOp :  HPC_Op<"dot", [Pure]> {
   let summary = "result = X · Y";
@@ -112,4 +101,4 @@ def HPC_DotOp :  HPC_Op<"dot", [Pure]> {
   let hasVerifier = 1;
 }
 
-#endif // HPC_OPS
+#endif

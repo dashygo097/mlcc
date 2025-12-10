@@ -4,10 +4,6 @@
 using namespace mlir;
 using namespace mlir::hpc;
 
-//===----------------------------------------------------------------------===//
-// Operation Verifiers
-//===----------------------------------------------------------------------===//
-
 LogicalResult AxpyOp::verify() {
   auto srcType = getSrc().getType().dyn_cast<MemRefType>();
   auto dstType = getDst().getType().dyn_cast<MemRefType>();

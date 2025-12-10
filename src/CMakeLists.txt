@@ -1,70 +1,15 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Detect if we're being built as part of the main project or standalone
-if(NOT TARGET mlcc)
-  # Standalone mode - need to find the MLCC library
-  project(mlcc-tools LANGUAGES C CXX)
+message(STATUS "[src] Subproject Project")
   
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  
-  # Find MLCC library (assumes it's been installed or built in ../build)
-  set(MLCC_DIR ${CMAKE_SOURCE_DIR}/../build CACHE PATH "Path to MLCC build directory")
-  
-  # Find LLVM/MLIR
-  find_package(LLVM REQUIRED CONFIG)
-  find_package(MLIR REQUIRED CONFIG)
-  
-  include_directories(${LLVM_INCLUDE_DIRS})
-  include_directories(${MLIR_INCLUDE_DIRS})
-  
-  list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
+# Make sure we have the MLIR CMake commands
+if(NOT COMMAND mlir_tablegen)
   list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
-  
-  include(AddLLVM)
   include(AddMLIR)
   include(TableGen)
-  
-  # Find libmlcc.a
-  find_library(MLCC_LIBRARY 
-    NAMES mlcc
-    PATHS ${MLCC_DIR}/lib
-    REQUIRED
-  )
-  
-  # Find HPC library
-  find_library(HPC_LIBRARY
-    NAMES hpc
-    PATHS ${MLCC_DIR}/3rdparty/hpc/lib
-    REQUIRED
-  )
-  
-  set(MLCC_INCLUDE_DIRS
-    ${MLCC_DIR}/../include
-    ${MLCC_DIR}/include
-    ${MLCC_DIR}/../3rdparty/hpc/include
-  )
-  
-  include_directories(${MLCC_INCLUDE_DIRS})
-  
-  message(STATUS "[src] Standalone mode - using MLCC from:  ${MLCC_DIR}")
-else()
-  # Subproject mode - MLCC library is already available
-  message(STATUS "[src] Subproject mode - using parent MLCC library")
-  
-  # Make sure we have the MLIR CMake commands
-  if(NOT COMMAND mlir_tablegen)
-    list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
-    include(AddMLIR)
-    include(TableGen)
-  endif()
 endif()
 
-# ==============================================================================
 # Generate TableGen files for HPC dialect
-# ==============================================================================
-
-# Set output directory for generated files
 set(HPC_TABLEGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/include/hpc)
 file(MAKE_DIRECTORY ${HPC_TABLEGEN_OUTPUT_DIR})
 
@@ -124,10 +69,7 @@ add_custom_command(TARGET HPCPassesIncGen POST_BUILD
   COMMENT "Copying HPC pass generated files"
 )
 
-# ==============================================================================
 # Collect HPC dialect sources
-# ==============================================================================
-
 set(HPC_DIALECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/Dialect.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/Verifiers.cpp
@@ -148,10 +90,7 @@ endforeach()
 message(STATUS "[src] HPC dialect sources: ${HPC_DIALECT_SOURCES}")
 message(STATUS "[src] HPC runtime sources: ${HPC_RUNTIME_SOURCES}")
 
-# ==============================================================================
-# Build HPC dialect library (used by executables)
-# ==============================================================================
-
+# Build HPC dialect library
 add_library(mlcc_hpc_dialect STATIC ${HPC_DIALECT_SOURCES})
 
 # Add dependencies on TableGen targets
@@ -186,10 +125,7 @@ set_target_properties(mlcc_hpc_dialect PROPERTIES
 
 message(STATUS "[src] Created library: libmlcc_hpc_dialect.a")
 
-# ==============================================================================
 # Build HPC runtime library
-# ==============================================================================
-
 add_library(mlcc_hpc_runtime STATIC ${HPC_RUNTIME_SOURCES})
 
 target_link_libraries(mlcc_hpc_runtime PUBLIC ${HPC_LIBRARY})
@@ -206,10 +142,7 @@ set_target_properties(mlcc_hpc_runtime PROPERTIES
 
 message(STATUS "[src] Created library: libmlcc_hpc_runtime.a")
 
-# ==============================================================================
 # Build mlcc-opt executable
-# ==============================================================================
-
 add_llvm_executable(mlcc-opt mlcc-opt.cpp)
 
 llvm_update_compile_flags(mlcc-opt)
