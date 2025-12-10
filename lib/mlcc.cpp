@@ -1,4 +1,3 @@
-#include "mlir/IR/Dialect.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
 #include <mlcc.hh>
