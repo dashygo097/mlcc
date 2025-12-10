@@ -130,6 +130,7 @@ add_custom_command(TARGET HPCPassesIncGen POST_BUILD
 
 set(HPC_DIALECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/Dialect.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/Verifiers.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Transforms/Lower2LLVM.cpp
 )
 
@@ -170,7 +171,6 @@ target_link_libraries(mlcc_hpc_dialect PUBLIC
   MLIRDialect
   MLIRPass
   MLIRTransforms
-  MLIRConversionPasses
   MLIRFuncDialect
   MLIRArithDialect
   MLIRLLVMDialect

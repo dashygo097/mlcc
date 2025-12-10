@@ -30,18 +30,7 @@ LLVM::LLVMFuncOp getOrInsertFunction(PatternRewriter &rewriter, ModuleOp module,
 }
 
 Value extractMemRefPtr(Location loc, Value memref, PatternRewriter &rewriter) {
-  auto memrefType = memref.getType().dyn_cast<MemRefType>();
-  if (!memrefType)
-    return Value();
-
-  // Extract aligned pointer from memref descriptor
-  auto descType = rewriter.getType<LLVM::LLVMStructType>(SmallVector<Type>{
-      LLVM::LLVMPointerType::get(rewriter.getContext()), // allocated ptr
-      LLVM::LLVMPointerType::get(rewriter.getContext()), // aligned ptr
-      rewriter.getI64Type(),                             // offset
-  });
-
-  // Get aligned pointer (index 1)
+  // Extract aligned pointer from memref descriptor (index 1)
   return rewriter.create<LLVM::ExtractValueOp>(loc, memref,
                                                ArrayRef<int64_t>{1});
 }
@@ -81,8 +70,11 @@ struct AxpyOpLowering : public OpConversionPattern<hpc::AxpyOp> {
 
     Value n = rewriter.create<LLVM::ConstantOp>(loc, i64Type, op.getNAttr());
 
+    // Create call using function name (string)
     rewriter.create<LLVM::CallOp>(
-        loc, func, ValueRange{n, dstPtr, srcPtr, adaptor.getAlpha()});
+        loc, TypeRange{}, // void return
+        funcName, ValueRange{n, dstPtr, srcPtr, adaptor.getAlpha()});
+
     rewriter.eraseOp(op);
     return success();
   }
@@ -119,7 +111,9 @@ struct CopyOpLowering : public OpConversionPattern<hpc::CopyOp> {
 
     Value n = rewriter.create<LLVM::ConstantOp>(loc, i64Type, op.getNAttr());
 
-    rewriter.create<LLVM::CallOp>(loc, func, ValueRange{n, dstPtr, srcPtr});
+    rewriter.create<LLVM::CallOp>(loc, TypeRange{}, // void return
+                                  funcName, ValueRange{n, dstPtr, srcPtr});
+
     rewriter.eraseOp(op);
     return success();
   }
@@ -155,8 +149,10 @@ struct ScalOpLowering : public OpConversionPattern<hpc::ScalOp> {
 
     Value n = rewriter.create<LLVM::ConstantOp>(loc, i64Type, op.getNAttr());
 
-    rewriter.create<LLVM::CallOp>(loc, func,
+    rewriter.create<LLVM::CallOp>(loc, TypeRange{}, // void return
+                                  funcName,
                                   ValueRange{n, dstPtr, adaptor.getAlpha()});
+
     rewriter.eraseOp(op);
     return success();
   }
@@ -193,9 +189,12 @@ struct DotOpLowering : public OpConversionPattern<hpc::DotOp> {
 
     Value n = rewriter.create<LLVM::ConstantOp>(loc, i64Type, op.getNAttr());
 
-    auto result = rewriter.create<LLVM::CallOp>(
-        loc, resultType, func, ValueRange{n, src1Ptr, src2Ptr});
-    rewriter.replaceOp(op, result.getResult());
+    auto callOp = rewriter.create<LLVM::CallOp>(
+        loc,
+        resultType, // return type
+        funcName, ValueRange{n, src1Ptr, src2Ptr});
+
+    rewriter.replaceOp(op, callOp.getResult());
     return success();
   }
 };
@@ -228,14 +227,14 @@ struct LowerHPCToLLVMPass
 
   StringRef getArgument() const override { return "lower-hpc-to-llvm"; }
   StringRef getDescription() const override {
-    return "Lower HPC dialect to LLVM calls to libhpc.a";
+    return "Lower HPC dialect to LLVM calls to libhpc. a";
   }
 };
 
 } // anonymous namespace
 
 //===----------------------------------------------------------------------===//
-// Pass creation and registration
+// Pass creation and registration (OUTSIDE anonymous namespace)
 //===----------------------------------------------------------------------===//
 
 namespace mlir {
@@ -246,9 +245,15 @@ std::unique_ptr<OperationPass<ModuleOp>> createLowerHPCToLLVMPass() {
 }
 
 void registerPasses() {
-#define GEN_PASS_REGISTRATION
-#include "Passes.h.inc"
+  // Registration implementation
+  ::mlir::registerPass([]() -> std::unique_ptr<::mlir::Pass> {
+    return createLowerHPCToLLVMPass();
+  });
 }
 
 } // namespace hpc
 } // namespace mlir
+
+// Include generated pass registration OUTSIDE all namespaces
+#define GEN_PASS_REGISTRATION
+#include "hpc/Passes.h.inc"
