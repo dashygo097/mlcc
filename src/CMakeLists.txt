@@ -11,11 +11,10 @@ endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddDialect.cmake)
 
-# Collect HPC dialect sources
-set(HPC_DIALECT_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/Dialect.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/Verifiers.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Transforms/Lower2LLVM.cpp
+# HPC  
+file(GLOB_RECURSE HPC_DIALECT_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Transforms/*.cpp
 )
 
 add_mlcc_dialect(
@@ -25,8 +24,8 @@ add_mlcc_dialect(
   SOURCES ${HPC_DIALECT_SOURCES}
 )
 
-set(HPC_RUNTIME_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Runtime/Runtime.cpp
+file(GLOB_RECURSE HPC_RUNTIME_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Runtime/*.cpp
 )
 
 add_mlcc_runtime(
@@ -39,7 +38,7 @@ add_mlcc_runtime(
 message(STATUS "[src] HPC dialect sources: ${HPC_DIALECT_SOURCES}")
 message(STATUS "[src] HPC runtime sources: ${HPC_RUNTIME_SOURCES}")
 
-# Build mlcc-opt executable
+# mlcc-opt
 add_llvm_executable(mlcc-opt mlcc-opt.cpp)
 
 llvm_update_compile_flags(mlcc-opt)

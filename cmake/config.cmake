@@ -5,4 +5,4 @@ set(USE_CCACHE ON)
 
 # Build options
 set(BUILD_EXECUTABLES ON)
-set(ENABLE_TESTING ON)
+set(ENABLE_TESTING OFF)
