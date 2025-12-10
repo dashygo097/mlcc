@@ -13,11 +13,6 @@ if(ENABLE_TESTING)
   endif()
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/hpc")
-  add_subdirectory(3rdparty/hpc EXCLUDE_FROM_ALL)
-  set(HAS_HPC TRUE)
-endif()
-
 # --- LLVM ---
 find_package(LLVM REQUIRED CONFIG)
 include(AddLLVM)

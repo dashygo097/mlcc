@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
 
-message(STATUS "[src] Subproject Project")
-  
 # Make sure we have the MLIR CMake commands
 if(NOT COMMAND mlir_tablegen)
   list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
@@ -12,6 +10,9 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddDialect.cmake)
 
 # HPC  
+include(${CMAKE_CURRENT_SOURCE_DIR}/hpc/config.cmake)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/backends/hpc EXCLUDE_FROM_ALL)
+
 file(GLOB_RECURSE HPC_DIALECT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/IR/*.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/hpc/Transforms/*.cpp
@@ -32,11 +33,11 @@ add_mlcc_runtime(
   NAME HPC
   SOURCES ${HPC_RUNTIME_SOURCES}
   LINK_LIBS ${HPC_LIBRARY}
-  INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/3rdparty/hpc/include
+  INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/backends/hpc/include
 )
 
-message(STATUS "[src] HPC dialect sources: ${HPC_DIALECT_SOURCES}")
-message(STATUS "[src] HPC runtime sources: ${HPC_RUNTIME_SOURCES}")
+message(STATUS "[HPC] dialect sources: ${HPC_DIALECT_SOURCES}")
+message(STATUS "[HPC] runtime sources: ${HPC_RUNTIME_SOURCES}")
 
 # mlcc-opt
 add_llvm_executable(mlcc-opt mlcc-opt.cpp)
@@ -72,4 +73,4 @@ set_target_properties(mlcc-opt PROPERTIES
 
 mlir_check_all_link_libraries(mlcc-opt)
 
-message(STATUS "[src] Created executable: mlcc-opt")
+message(STATUS "[mlcc-opt] Created executable")

@@ -16,12 +16,6 @@ if(CCACHE_PROGRAM)
   print_info("  ✓ ccache ${CCACHE_PROGRAM}\n" "92")
 endif()
 
-if(HAS_HPC)
-  print_info("  ✓ hpc: 3rdparty/hpc\n" "92")
-else()
-  print_info("  ✗ hpc support\n" "91")
-endif()
-
 if(HAS_LLVM)
   print_info("  ✓ llvm: ${LLVM_DIR}\n" "92")
 else()
