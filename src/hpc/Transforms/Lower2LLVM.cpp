@@ -39,7 +39,6 @@ Value extractMemRefBasePtr(Location loc, Value memrefDescriptor,
 }
 
 // Conversion patterns
-
 struct DotOpLowering : public OpConversionPattern<hpc::DotOp> {
   using OpConversionPattern<hpc::DotOp>::OpConversionPattern;
 
@@ -106,7 +105,7 @@ struct LowerHPCToLLVMPass
 
   StringRef getArgument() const override { return "lower-hpc-to-llvm"; }
   StringRef getDescription() const override {
-    return "Lower HPC dialect to LLVM calls to libhpc. a";
+    return "Lower HPC dialect to LLVM calls to libhpc.a";
   }
 };
 

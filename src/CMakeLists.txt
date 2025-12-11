@@ -40,7 +40,7 @@ message(STATUS "[HPC] dialect sources: ${HPC_DIALECT_SOURCES}")
 message(STATUS "[HPC] runtime sources: ${HPC_RUNTIME_SOURCES}")
 
 # mlcc-opt
-add_llvm_executable(mlcc-opt mlcc-opt.cpp)
+add_llvm_executable(mlcc-opt ${CMAKE_CURRENT_SOURCE_DIR}/mlcc-opt.cpp)
 
 llvm_update_compile_flags(mlcc-opt)
 
