@@ -10,9 +10,6 @@
 namespace mlir {
 namespace hpc {
 
-class AxpyOp;
-class CopyOp;
-class ScalOp;
 class DotOp;
 
 } // namespace hpc

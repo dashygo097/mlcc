@@ -16,70 +16,7 @@ def HPC_Dialect : Dialect {
 class HPC_Op<string mnemonic, list<Trait> traits = []> : 
     Op<HPC_Dialect, mnemonic, traits>;
 
-// AXPY
-def HPC_AxpyOp : HPC_Op<"axpy", [MemoryEffects<[MemWrite]>]> {
-  let summary = "Y = alpha * X + Y";
-  let description = [{
-    Performs the AXPY operation: Y = alpha * X + Y
-    where X and Y are vectors and alpha is a scalar.
-  }];
-  
-  let arguments = (ins
-    I64Attr: $n,
-    AnyFloat:$alpha,
-    AnyMemRef:$src,
-    AnyMemRef: $dst
-  );
-  
-  let assemblyFormat = [{
-    $n `,` $alpha `,` $src `,` $dst attr-dict `:` type($alpha) `,` type($src) `,` type($dst)
-  }];
-  
-  let hasVerifier = 1;
-}
-
-// COPY
-def HPC_CopyOp : HPC_Op<"copy", [MemoryEffects<[MemWrite]>]> {
-  let summary = "Y = X";
-  let description = [{
-    Copies vector X to vector Y.
-  }];
-  
-  let arguments = (ins
-    I64Attr:$n,
-    AnyMemRef:$src,
-    AnyMemRef: $dst
-  );
-  
-  let assemblyFormat = [{
-    $n `,` $src `,` $dst attr-dict `:` type($src) `,` type($dst)
-  }];
-  
-  let hasVerifier = 1;
-}
-
-// SCAL
-def HPC_ScalOp :  HPC_Op<"scal", [MemoryEffects<[MemWrite]>]> {
-  let summary = "X = alpha * X";
-  let description = [{
-    Scales vector X by scalar alpha in-place.
-  }];
-  
-  let arguments = (ins
-    I64Attr:$n,
-    AnyFloat: $alpha,
-    AnyMemRef:$dst
-  );
-  
-  let assemblyFormat = [{
-    $n `,` $alpha `,` $dst attr-dict `:` type($alpha) `,` type($dst)
-  }];
-  
-  let hasVerifier = 1;
-}
-
-// DOT
-
+// dot
 def HPC_DotOp :  HPC_Op<"dot", [Pure]> {
   let summary = "result = X · Y";
   let description = [{
