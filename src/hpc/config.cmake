@@ -7,6 +7,7 @@ set(ENABLE_MPI OFF)
 set(ENABLE_CUDA OFF)
 
 # BLAS/LAPACK Options
+set(ENABLE_OPENBLAS OFF)
 set(ENABLE_ACCELERATE OFF)
 
 # Compilation Options
