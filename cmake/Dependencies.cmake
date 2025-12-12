@@ -32,6 +32,8 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 # --- MLIR ---
 find_package(MLIR REQUIRED CONFIG)
+list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
+include(AddMLIR)
 
 message(STATUS "Using MLIRConfig.cmake in: ${MLIR_DIR}")
 

@@ -1,5 +1,5 @@
-#include "hpc/Dialect.hpp"
-#include "hpc/Passes.hpp"
+#include "lib/Dialect.hpp"
+#include "lib/Passes.hpp"
 #include <mlcc.hh>
 
 #include "mlir/IR/MLIRContext.h"
