@@ -186,15 +186,13 @@ int main(int argc, char **argv) {
   mlir::registerAllPasses();
   hpc::registerPasses();
 
-  llvm::outs() << "╔════════════════════════════════════════╗\n";
-  llvm::outs() << "║     MLCC HPC++ Compiler v1.0          ║\n";
-  llvm::outs() << "╚════════════════════════════════════════╝\n\n";
-
+  // Load MLIR module
   auto module = loadMLIR(context, inputFilename);
   if (!module) {
     return 1;
   }
 
+  // Verify input module
   if (failed(mlir::verify(*module))) {
     llvm::errs() << "Error: Input module verification failed\n";
     module->dump();
@@ -203,6 +201,7 @@ int main(int argc, char **argv) {
 
   llvm::outs() << "[1/4] Module loaded and verified\n";
 
+  // Apply optimizations
   int optLevel = std::stoi(optimizationLevel);
   if (failed(applyOptimizations(*module, optLevel))) {
     return 1;
@@ -219,6 +218,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  // Lower to LLVM dialect
   if (failed(lowerToLLVM(*module))) {
     llvm::errs() << "Lowered module:\n";
     module->dump();
@@ -227,6 +227,7 @@ int main(int argc, char **argv) {
 
   llvm::outs() << "[3/4] Lowered to LLVM dialect\n";
 
+  // Export to LLVM IR
   auto llvmModule = exportToLLVMIR(*module, llvmContext);
   if (!llvmModule) {
     return 1;
@@ -234,6 +235,7 @@ int main(int argc, char **argv) {
 
   llvm::outs() << "[4/4] LLVM IR generated\n";
 
+  // Write output
   if (failed(writeOutput(*module, llvmModule.get(), outputFilename))) {
     return 1;
   }
