@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.21)
 
-set(MLCC_HPC_PLUSPLUS_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/mlcc-hpc++.cpp)
+set(MLCC_HPC_PLUSPLUS_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/mlcc++.cpp)
 
 if(EXISTS ${MLCC_HPC_PLUSPLUS_SOURCE})
   find_package(Clang QUIET CONFIG)
   
   if(Clang_FOUND)
-    add_llvm_executable(mlcc-hpc++ ${MLCC_HPC_PLUSPLUS_SOURCE})
+    add_llvm_executable(hpc-mlcc++ ${MLCC_HPC_PLUSPLUS_SOURCE})
 
-    llvm_update_compile_flags(mlcc-hpc++)
+    llvm_update_compile_flags(hpc-mlcc++)
 
     get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
     get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-    target_link_libraries(mlcc-hpc++ PRIVATE
+    target_link_libraries(hpc-mlcc++ PRIVATE
       # Clang
       clangTooling
       clangFrontend
@@ -46,7 +46,7 @@ if(EXISTS ${MLCC_HPC_PLUSPLUS_SOURCE})
       LLVMPasses
     )
 
-    target_include_directories(mlcc-hpc++ PRIVATE
+    target_include_directories(hpc-mlcc++ PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_BINARY_DIR}/include
       ${CMAKE_SOURCE_DIR}/include
@@ -54,7 +54,7 @@ if(EXISTS ${MLCC_HPC_PLUSPLUS_SOURCE})
       ${MLIR_INCLUDE_DIRS}
     )
 
-    set_target_properties(mlcc-hpc++ PROPERTIES
+    set_target_properties(hpc-mlcc++ PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
 
