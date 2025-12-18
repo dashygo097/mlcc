@@ -29,6 +29,6 @@ add_mlcc_runtime(
 message(STATUS "[HPC] dialect sources: ${HPC_DIALECT_SOURCES}")
 message(STATUS "[HPC] runtime sources: ${HPC_RUNTIME_SOURCES}")
 
-# opt
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/compiler)
+# tools 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/opt)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/compiler)

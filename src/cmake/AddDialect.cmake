@@ -108,7 +108,7 @@ function(add_mlcc_dialect)
 
   # Create dialect library
   set(library_name mlcc_${dialect_lower}_dialect)
-  add_library(${library_name} STATIC ${DIALECT_SOURCES})
+  add_mlir_library(${library_name} STATIC ${DIALECT_SOURCES})
 
   # Add TableGen dependencies
   add_dependencies(${library_name} ${tablegen_targets})
@@ -122,23 +122,6 @@ function(add_mlcc_dialect)
     ${MLCC_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/include
-  )
-
-  target_link_libraries(${library_name} PUBLIC
-    ${MLCC_LIBRARY}
-    MLIRParser
-    MLIRIR
-    MLIRSupport
-    MLIRDialect
-    MLIRPass
-    MLIRTransforms
-    MLIRFuncDialect
-    MLIRArithDialect
-    MLIRLLVMDialect
-    MLIRLLVMCommonConversion
-    MLIRMemRefDialect
-    LLVMSupport
-    LLVMCore
   )
 
   set_target_properties(${library_name} PROPERTIES
@@ -191,7 +174,7 @@ function(add_mlcc_runtime)
 
   # Create runtime library
   set(library_name mlcc_${runtime_lower}_runtime)
-  add_library(${library_name} STATIC ${RUNTIME_SOURCES})
+  add_mlir_library(${library_name} STATIC ${RUNTIME_SOURCES})
 
   target_include_directories(${library_name} PUBLIC
     ${MLCC_INCLUDE_DIRS}

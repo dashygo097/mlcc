@@ -1,25 +1,22 @@
 #include "lib/Dialect.hpp"
-#include "lib/Passes.hpp"
-#include <mlcc.hh>
-
-#include "mlir/IR/MLIRContext.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/InitAllDialects.h"
-#include "mlir/InitAllPasses.h"
-#include "mlir/Support/FileUtilities.h"
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
+#include "mlir/Transforms/Passes.h"
+
+using namespace mlir;
+using namespace llvm;
 
 int main(int argc, char **argv) {
-  // Register all MLIR passes
-  mlir::registerAllPasses();
+  DialectRegistry registry;
 
-  // Register HPC passes
-  mlir::hpc::registerPasses();
+  registry.insert<hpc::HPCDialect>();
+  registry.insert<func::FuncDialect>();
+  registry.insert<memref::MemRefDialect>();
 
-  // Register all dialects
-  mlir::DialectRegistry registry;
-  mlir::registerAllDialects(registry);
-  registry.insert<mlir::hpc::HPCDialect>();
+  registerCSEPass();
+  registerCanonicalizerPass();
 
-  return mlir::asMainReturnCode(
-      mlir::MlirOptMain(argc, argv, "MLCC HPC Optimizer\n", registry));
+  return asMainReturnCode(MlirOptMain(argc, argv, "hpc-mlcc-opt", registry));
 }
