@@ -60,7 +60,7 @@ struct DotOpLowering : public ConvertOpToLLVMPattern<hpc::DotOp> {
     StringRef funcName = isF32 ? "hpc_dot_f32" : "hpc_dot_f64";
 
     auto runtimeFunc =
-        getOrInsertRuntimeFunction(rewriter, module, funcName, llvmPtrType,
+        getOrInsertRuntimeFunction(rewriter, module, funcName, llvmFloatType,
                                    {llvmI64Type, llvmPtrType, llvmPtrType});
 
     MemRefDescriptor src1Desc(adaptor.getSrc1());
