@@ -52,6 +52,43 @@ static cl::opt<std::string>
     optimizationLevel("O", cl::desc("Optimization level (0, 1, 2, 3)"),
                       cl::init("2"));
 
+static cl::opt<bool>
+    skipLowering("skip-lowering",
+                 cl::desc("Skip lowering (input already in LLVM dialect)"),
+                 cl::init(false));
+
+static cl::opt<bool> noLLVMOpt("no-llvm-opt",
+                               cl::desc("Disable LLVM IR optimizations"),
+                               cl::init(false));
+
+static bool isLoweredToLLVM(ModuleOp module) {
+  bool hasHPCOps = false;
+  bool hasLLVMOps = false;
+
+  module.walk([&](Operation *op) {
+    if (op->getDialect() && op->getDialect()->getNamespace() == "hpc") {
+      hasHPCOps = true;
+    }
+    if (op->getDialect() && op->getDialect()->getNamespace() == "llvm") {
+      hasLLVMOps = true;
+    }
+  });
+
+  return hasLLVMOps && !hasHPCOps;
+}
+
+static bool hasUnrealizedCasts(ModuleOp module) {
+  bool found = false;
+  module.walk([&](Operation *op) {
+    if (isa<mlir::UnrealizedConversionCastOp>(op)) {
+      found = true;
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return found;
+}
+
 static OwningOpRef<ModuleOp> loadMLIR(MLIRContext &context,
                                       const std::string &filename) {
   context.loadDialect<hpc::HPCDialect>();
@@ -59,7 +96,7 @@ static OwningOpRef<ModuleOp> loadMLIR(MLIRContext &context,
   std::string errorMessage;
   auto file = openInputFile(filename, &errorMessage);
   if (!file) {
-    llvm::errs() << "Error: " << errorMessage << "\n";
+    llvm::errs() << "Error:  " << errorMessage << "\n";
     return nullptr;
   }
 
@@ -102,7 +139,6 @@ static LogicalResult lowerToLLVM(ModuleOp module) {
   mlir::PassManager pm(module.getContext());
 
   pm.addPass(hpc::createLowerHPCToLLVMPass());
-
   pm.addPass(mlir::createConvertSCFToCFPass());
   pm.addPass(mlir::createConvertFuncToLLVMPass());
   pm.addPass(mlir::createArithToLLVMConversionPass());
@@ -119,6 +155,13 @@ static LogicalResult lowerToLLVM(ModuleOp module) {
 
 static std::unique_ptr<llvm::Module>
 exportToLLVMIR(ModuleOp module, llvm::LLVMContext &llvmContext) {
+  if (hasUnrealizedCasts(module)) {
+    llvm::errs() << "Warning: Module contains unrealized conversion casts.\n";
+    llvm::errs() << "         This may cause issues.  Try adding:\n";
+    llvm::errs()
+        << "         --reconcile-unrealized-casts pass in hpc-mlcc-opt\n\n";
+  }
+
   auto llvmModule = mlir::translateModuleToLLVMIR(module, llvmContext);
 
   if (!llvmModule) {
@@ -126,14 +169,22 @@ exportToLLVMIR(ModuleOp module, llvm::LLVMContext &llvmContext) {
     return nullptr;
   }
 
-  int optLevel = std::stoi(optimizationLevel);
-  if (optLevel > 0) {
-    auto optPipeline = mlir::makeOptimizingTransformer(optLevel, 0, nullptr);
-    if (optPipeline) {
-      if (auto err = optPipeline(llvmModule.get())) {
-        llvm::errs() << "Warning:  LLVM optimization had issues\n";
+  if (!noLLVMOpt) {
+    int optLevel = std::stoi(optimizationLevel);
+    if (optLevel > 0) {
+      llvm::outs() << "    Applying LLVM O" << optLevel
+                   << " optimizations.. .\n";
+
+      auto optPipeline = mlir::makeOptimizingTransformer(optLevel, 0, nullptr);
+      if (optPipeline) {
+        if (auto err = optPipeline(llvmModule.get())) {
+          llvm::errs() << "Warning:  LLVM optimization failed\n";
+          llvm::errs() << "         Try running with --no-llvm-opt\n";
+        }
       }
     }
+  } else {
+    llvm::outs() << "    LLVM optimizations disabled\n";
   }
 
   return llvmModule;
@@ -176,7 +227,6 @@ int main(int argc, char **argv) {
   mlir::registerLLVMDialectTranslation(registry);
 
   MLIRContext context(registry);
-
   llvm::LLVMContext llvmContext;
 
   context.loadDialect<hpc::HPCDialect, func::FuncDialect, arith::ArithDialect,
@@ -186,13 +236,12 @@ int main(int argc, char **argv) {
   mlir::registerAllPasses();
   hpc::registerPasses();
 
-  // Load MLIR module
+  // Load module
   auto module = loadMLIR(context, inputFilename);
   if (!module) {
     return 1;
   }
 
-  // Verify input module
   if (failed(mlir::verify(*module))) {
     llvm::errs() << "Error: Input module verification failed\n";
     module->dump();
@@ -201,14 +250,28 @@ int main(int argc, char **argv) {
 
   llvm::outs() << "[1/4] Module loaded and verified\n";
 
-  // Apply optimizations
-  int optLevel = std::stoi(optimizationLevel);
-  if (failed(applyOptimizations(*module, optLevel))) {
-    return 1;
+  // Check if already lowered
+  bool alreadyLowered = isLoweredToLLVM(*module);
+  if (alreadyLowered) {
+    llvm::outs() << "    ⚠ Module already lowered to LLVM dialect\n";
+    if (!skipLowering) {
+      llvm::outs() << "    ⚠ Skipping MLIR optimizations and lowering\n";
+      llvm::outs() << "    ⚠ Use --skip-lowering to suppress this message\n";
+    }
   }
 
-  llvm::outs() << "[2/4] Optimizations applied (level " << optLevel << ")\n";
+  // Apply MLIR optimizations
+  if (!alreadyLowered) {
+    int optLevel = std::stoi(optimizationLevel);
+    if (failed(applyOptimizations(*module, optLevel))) {
+      return 1;
+    }
+    llvm::outs() << "[2/4] Optimizations applied (level " << optLevel << ")\n";
+  } else {
+    llvm::outs() << "[2/4] Optimizations skipped (already lowered)\n";
+  }
 
+  // Early exit for MLIR output
   if (emitMLIR) {
     if (failed(writeOutput(*module, nullptr, outputFilename))) {
       return 1;
@@ -218,14 +281,17 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  // Lower to LLVM dialect
-  if (failed(lowerToLLVM(*module))) {
-    llvm::errs() << "Lowered module:\n";
-    module->dump();
-    return 1;
+  // Lower to LLVM
+  if (!alreadyLowered && !skipLowering) {
+    if (failed(lowerToLLVM(*module))) {
+      llvm::errs() << "Lowered module:\n";
+      module->dump();
+      return 1;
+    }
+    llvm::outs() << "[3/4] Lowered to LLVM dialect\n";
+  } else {
+    llvm::outs() << "[3/4] Lowering skipped\n";
   }
-
-  llvm::outs() << "[3/4] Lowered to LLVM dialect\n";
 
   // Export to LLVM IR
   auto llvmModule = exportToLLVMIR(*module, llvmContext);
