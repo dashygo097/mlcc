@@ -21,6 +21,12 @@ target_link_libraries(hpc-opt PRIVATE
   MLIRMemRefDialect
   MLIRArithDialect
   MLIRSCFDialect
+
+  # Conversions
+  MLIRFuncToLLVM
+  MLIRMemRefToLLVM
+  MLIRLLVMCommonConversion
+  MLIRLLVMDialect
 )
 
 target_include_directories(hpc-opt PRIVATE
