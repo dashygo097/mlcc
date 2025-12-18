@@ -21,9 +21,6 @@ target_link_libraries(hpc-opt PRIVATE
   MLIRMemRefDialect
   MLIRArithDialect
   MLIRSCFDialect
-  
-  # Transforms
-  MLIRMemRefTransforms
 )
 
 target_include_directories(hpc-opt PRIVATE

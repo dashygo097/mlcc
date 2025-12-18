@@ -13,6 +13,7 @@ int main(int argc, char **argv) {
 
   registry.insert<hpc::HPCDialect>();
   registry.insert<func::FuncDialect>();
+  registry.insert<arith::ArithDialect>();
   registry.insert<memref::MemRefDialect>();
 
   registerCSEPass();
