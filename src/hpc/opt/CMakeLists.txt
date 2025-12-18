@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # mlcc-opt
-add_llvm_executable(hpc-opt ${CMAKE_CURRENT_SOURCE_DIR}/mlcc-opt.cpp)
+add_llvm_executable(hpc-opt ${CMAKE_CURRENT_SOURCE_DIR}/hpc-opt.cpp)
 
 target_link_libraries(hpc-opt PRIVATE
   mlcc_hpc_dialect

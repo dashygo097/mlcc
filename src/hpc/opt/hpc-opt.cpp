@@ -12,9 +12,9 @@ using namespace mlir;
 using namespace llvm;
 
 int main(int argc, char **argv) {
-  DialectRegistry registry;
-
   mlir::hpc::registerPasses();
+
+  DialectRegistry registry;
 
   registry.insert<hpc::HPCDialect>();
   registry.insert<func::FuncDialect>();

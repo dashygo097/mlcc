@@ -31,4 +31,3 @@ message(STATUS "[HPC] runtime sources: ${HPC_RUNTIME_SOURCES}")
 
 # tools 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/opt)
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/compiler)
