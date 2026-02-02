@@ -24,7 +24,7 @@ include(BuildSummaries)
 
 # Executables
 if(BUILD_EXECUTABLES)
-  add_subdirectory(src)
+  add_subdirectory(backends)
 endif()
 
 # Tests

@@ -4,6 +4,6 @@
 [submodule "3rdparty/benchmark"]
 	path = 3rdparty/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "src/backends/hpc"]
-	path = src/hpc/backends/hpc
+[submodule "backends/hpc/backends/hpc"]
+	path = backends/hpc/backends/hpc
 	url = https://github.com/dashygo097/hpc.git
